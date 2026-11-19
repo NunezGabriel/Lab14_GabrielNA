@@ -23,7 +23,7 @@ public static class ServiceRegistrationExtensions
             {
                 Title       = "Reportes Excel API",
                 Version     = "v1",
-                Description = "API de reportes en Excel (ClosedXML) sobre la base de datos linqexample, con arquitectura hexagonal, patrón repositorio y CQRS (MediatR)."
+                Description = "API de reportes en Excel (ClosedXML) sobre la base de datos linqexample, con arquitectura hexagonal, patrón repositorio y CQRS (MediatR). Lab 14: desplegada en Render con CI/CD desde GitHub Actions."
             });
         });
 
