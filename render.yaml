@@ -1,0 +1,24 @@
+databases:
+  - name: linqexample-db
+    databaseName: linqexample
+    user: lab14
+    plan: free
+    region: virginia
+
+services:
+  - type: web
+    name: lab14-reportes-api
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: linqexample-db
+          property: connectionString
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production

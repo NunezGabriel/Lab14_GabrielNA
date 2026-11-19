@@ -1,0 +1,81 @@
+name: Build and Deploy .NET Application
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Lab13_GabrielNA.sln
+
+      - name: Build application
+        run: dotnet build Lab13_GabrielNA.sln --configuration Release --no-restore
+
+      - name: Publish application
+        run: dotnet publish Lab13_GabrielNA/Lab13_GabrielNA.csproj --configuration Release --no-build --output ./published
+
+      - name: Upload published files
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-publicada
+          path: ./published
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: linqexample
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build --tag lab14-reportes-api .
+
+      - name: Run container
+        run: |
+          docker run --detach --name api --network host \
+            --env ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=linqexample;Username=postgres;Password=postgres" \
+            lab14-reportes-api
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 30); do curl --fail --silent http://localhost:8080/health && break; sleep 2; done
+          curl --fail --silent http://localhost:8080/api/Clientes
+          curl --fail --silent --output reporte-ventas.xlsx http://localhost:8080/api/Reportes/ventas/excel
+          ls -l reporte-ventas.xlsx
+
+      - name: Container logs
+        if: always()
+        run: docker logs api
